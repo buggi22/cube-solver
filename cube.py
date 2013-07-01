@@ -4,6 +4,12 @@ class Cube:
   faces = ['front', 'back', 'up', 'down', 'left', 'right']
   standard_colors = ['red', 'orange', 'yellow', 'white', 'blue', 'green']
 
+  # Define the neighbors of each face, in the clockwise (CW) direction.
+  #
+  # Note: Any change to this order will affect the behavior of 
+  # get_color_from_coords.  Wherever possible,"up" should be the first
+  # neighbor; the first neighbor of "up" should be "left", and the first
+  # neighbor of "down" should be "back".
   cw_neighbors = {
     'front': ['up', 'right', 'down', 'left'],
     'back': ['up', 'left', 'down', 'right'],
@@ -155,8 +161,13 @@ class Cube:
     if seed != 'same_seed': # special value to avoid resetting the seed
       random.seed(seed)
     sequence = []
+    prev_face = None
     for i in range(moves):
-      face = random.choice(['front','back','up','down','left','right'])
+      available_faces = [] + Cube.faces
+      if prev_face != None:
+        available_faces.remove(prev_face)
+      face = random.choice(available_faces)
+      prev_face = face
       times = random.randint(1,3)
       sequence.append((face, times))
     return sequence
