@@ -136,10 +136,21 @@ class Cube:
     # perform the remainder of the rotation
     self.rotate(face, times-1)
 
+  def apply_sequence(self, sequence):
+    for face, times in sequence:
+      self.rotate(face, times)
+
   def scramble(self, moves=30, seed=1001):
+    sequence = self.generate_scramble_sequence(moves, seed)
+    self.apply_sequence(sequence)
+    return sequence
+
+  def generate_scramble_sequence(self, moves=30, seed=1001):
     if seed != 'same_seed': # special value to avoid resetting the seed
       random.seed(seed)
+    sequence = []
     for i in range(moves):
       face = random.choice(['front','back','up','down','left','right'])
       times = random.randint(1,3)
-      self.rotate(face, times)
+      sequence.append((face, times))
+    return sequence

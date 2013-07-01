@@ -19,4 +19,8 @@ for face in Cube.faces:
   display.draw()
   raw_input('press enter')
 
+sequence = cube.scramble()
+display.draw()
+print sequence
+raw_input('press enter')
 display.wait_until_quit()

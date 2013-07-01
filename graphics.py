@@ -89,6 +89,7 @@ class CubeDisplay:
       delta_x += width * 1.5
 
     if face == 'left' or face == 'front':
+      # pieces that slope down and to the right
       points = [
         (-width/2, -height/2 - rise/2),
         (width/2, -height/2 + rise/2),
@@ -98,6 +99,7 @@ class CubeDisplay:
       delta_x += width * center_x
       delta_y += height * center_y + rise * center_x
     elif face == 'up' or face == 'down':
+      # "level" pieces
       points = [
         (0, -rise),
         (width, 0),
@@ -107,6 +109,7 @@ class CubeDisplay:
       delta_x += width * (center_x + center_y)
       delta_y += rise * (-center_x + center_y)
     elif face == 'right' or face == 'back':
+      # pieces that slope up and to the right
       points = [
         (-width/2, -height/2 + rise/2),
         (width/2, -height/2 - rise/2),
