@@ -92,8 +92,8 @@ class Cube:
 
     raise "could not get color from coords"
   
-  def rotate_colors(self, colors):
-    return [colors[len(colors)-1]] + colors[:len(colors)-1]
+  def rotate_list(self, to_rotate):
+    return [to_rotate[len(to_rotate)-1]] + to_rotate[:len(to_rotate)-1]
 
   def rotate(self, face, times=1):
     if (times < 0):
@@ -104,9 +104,15 @@ class Cube:
     # perform one clockwise rotation
     neighbors = Cube.cw_neighbors[face]
     num_neighbors = len(neighbors)
+
     # first, rotate the edges
+    # on-face edges
+    colors = [self.get_color(face, n) for n in neighbors]
+    for n, c in zip(neighbors, self.rotate_list(colors)):
+      self.set_color(c, face, n)
+    # off-face edges
     colors = [self.get_color(n, face) for n in neighbors]
-    for n, c in zip(neighbors, self.rotate_colors(colors)):
+    for n, c in zip(neighbors, self.rotate_list(colors)):
       self.set_color(c, n, face)
   
     # next, rotate the corners
@@ -114,10 +120,10 @@ class Cube:
     colors = [
         self.get_color(face, neighbors[i], neighbors[(i+1) % num_neighbors]) \
         for i in range(num_neighbors)]
-    for i, c in zip(range(num_neighbors), self.rotate_colors(colors)):
+    for i, c in zip(range(num_neighbors), self.rotate_list(colors)):
       self.set_color(c, face, neighbors[i], neighbors[(i+1) % num_neighbors])
-
-    # off-face corners toward the CW and CCW directions
+    # two off-face corners (one corner closer to the CW direction, and the other
+    # corner closer to the CCW direction)
     cw_offset = 1
     ccw_offset = num_neighbors-1
     for offset in [cw_offset, ccw_offset]:
@@ -127,7 +133,7 @@ class Cube:
         index = neighbors_of_neighbors.index(face)
         edge2 = neighbors_of_neighbors[(index+offset) % num_neighbors]
         colors += [self.get_color(n, face, edge2)]
-      for n, c in zip(neighbors, self.rotate_colors(colors)):
+      for n, c in zip(neighbors, self.rotate_list(colors)):
         neighbors_of_neighbors = Cube.cw_neighbors[n]
         index = neighbors_of_neighbors.index(face)
         edge2 = neighbors_of_neighbors[(index+offset) % num_neighbors]
