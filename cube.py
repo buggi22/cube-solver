@@ -1,4 +1,5 @@
 import random
+import copy
 
 class Cube:
   faces = ['front', 'back', 'up', 'down', 'left', 'right']
@@ -19,8 +20,11 @@ class Cube:
     'right': ['up', 'back', 'down', 'front'],
   }
   
-  def __init__(self):
-    self.reset()
+  def __init__(self, to_copy=None):
+    if to_copy == None:
+      self.reset()
+    else:
+      self.reset_to(to_copy)
 
   def __str__(self):
     result = 'Cube:\n'
@@ -58,6 +62,9 @@ class Cube:
           self.set_color(color, face, neighbors[i], neighbors[j])
       for n in neighbors:
         self.set_color(color, face, n)
+
+  def reset_to(self, to_copy):
+    self.cube = copy.deepcopy(to_copy.cube)
 
   def key_at(self, face, edge=None, edge2=None):
     assert(face != None)
@@ -106,6 +113,18 @@ class Cube:
         return self.get_color(face, neighbors[3])
 
     raise "could not get color from coords"
+
+  def get_dest_face(self, color):
+    lookup = dict(zip(Cube.standard_colors, Cube.faces))
+    return lookup[color]
+
+  # Find the move needed to relocate (source_face, source_edge)
+  # to (source_face, dest_edge)
+  def get_simple_move(self, source_face, source_edge, dest_edge):
+    neighbors = Cube.cw_neighbors[source_face]
+    source_index = neighbors.index(source_edge)
+    dest_index = neighbors.index(dest_edge)
+    return (source_face, (dest_index - source_index) % 4)
   
   def rotate_list(self, to_rotate):
     return [to_rotate[len(to_rotate)-1]] + to_rotate[:len(to_rotate)-1]

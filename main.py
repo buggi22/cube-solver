@@ -18,7 +18,7 @@ sequence = cube.generate_scramble_sequence(moves=10)
 print 'Scrambling sequence: ' + str(sequence)
 run_sequence(sequence, cube, display)
 
-solution = Solver.find_solution(cube)
+solution = Solver().find_solution(cube)
 print 'Solution sequence: ' + str(solution)
 run_sequence(solution, cube, display)
 
