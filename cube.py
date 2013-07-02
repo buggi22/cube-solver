@@ -39,6 +39,15 @@ class Cube:
               + '\n'
     return result
 
+  def __eq__(self, other):
+    try:
+      return self.cube == other.cube
+    except AttributeError:
+      return False
+
+  def is_solved(self):
+    return self == Cube()
+
   def reset(self):
     self.cube = {}
     for face, color in zip(Cube.faces, Cube.standard_colors):
