@@ -23,7 +23,7 @@ class PhaseSolver:
     unsolved = self.find_unsolved(cube)
     attempts = 0
     while len(unsolved) > 0:
-      new_steps = self.solve_case(cube, unsolved[0])
+      new_steps = self.solve_case(cube, unsolved)
       solution += new_steps
       cube.apply_sequence(new_steps)
       unsolved = self.find_unsolved(cube)
@@ -61,7 +61,8 @@ class LowerEdges(PhaseSolver):
 
     return unsolved
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
+    case = unsolved[0]
     steps = []
     if case.source_face == 'down':
       steps.append(cube.get_simple_move(
@@ -90,42 +91,42 @@ class LowerCorners(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class MiddleEdges(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class UpperEdgesOrientation(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class UpperEdgesPermutation(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class UpperCornersOrientation(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class UpperCornersPermutation(PhaseSolver):
   def find_unsolved(self, cube):
     return []
 
-  def solve_case(self, cube, case):
+  def solve_case(self, cube, unsolved):
     return []
 
 class Solver:
