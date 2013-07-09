@@ -11,7 +11,7 @@ class Cube:
   # get_color_from_coords.  Wherever possible,"up" should be the first
   # neighbor; the first neighbor of "up" should be "left", and the first
   # neighbor of "down" should be "back".
-  cw_neighbors = {
+  _cw_neighbors = {
     'front': ['up', 'right', 'down', 'left'],
     'back': ['up', 'left', 'down', 'right'],
     'up': ['left', 'back', 'right', 'front'],
@@ -29,7 +29,7 @@ class Cube:
   def __str__(self):
     result = 'Cube:\n'
     for face in Cube.faces:
-      neighbors = Cube.cw_neighbors[face]
+      neighbors = Cube.cw_neighbor_edges(face)
       result += '  ' + str(face) + ':\n'
       result += '    center: ' + str(self.get_color(face)) + '\n'
       result += '    edges:\n'
@@ -56,7 +56,7 @@ class Cube:
     self.cube = {}
     for face, color in zip(Cube.faces, Cube.standard_colors):
       self.set_color(color, face)
-      neighbors = Cube.cw_neighbors[face]
+      neighbors = Cube.cw_neighbor_edges(face)
       for i in [0,2]:
         for j in [1,3]:
           self.set_color(color, face, neighbors[i], neighbors[j])
@@ -89,7 +89,7 @@ class Cube:
     assert(x in [-1,0,1])
     assert(y in [-1,0,1])
 
-    neighbors = Cube.cw_neighbors[face]
+    neighbors = Cube.cw_neighbor_edges(face)
 
     if x == 0 and y == 0: # center
       return self.get_color(face)
@@ -121,12 +121,52 @@ class Cube:
   # Find the move needed to relocate (source_face, source_edge)
   # to (source_face, dest_edge)
   def get_simple_move(self, source_face, source_edge, dest_edge):
-    neighbors = Cube.cw_neighbors[source_face]
+    neighbors = Cube.cw_neighbor_edges(source_face)
     source_index = neighbors.index(source_edge)
     dest_index = neighbors.index(dest_edge)
     return (source_face, (dest_index - source_index) % 4)
-  
-  def rotate_list(self, to_rotate):
+ 
+  def get_simple_move_corners(self, source_face, source_corner, dest_corner):
+    source_corner = tuple(sorted(source_corner))
+    dest_corner = tuple(sorted(dest_corner))
+    corners = [tuple(sorted(x)) for x in Cube.cw_corners_on_face(source_face)]
+    source_index = corners.index(source_corner)
+    dest_index = corners.index(dest_corner)
+    return (source_face, (dest_index - source_index) % 4)
+
+  @staticmethod
+  def cw_neighbor_edges(face):
+    return Cube._cw_neighbors[face]
+
+  @staticmethod
+  def cw_corners_on_face(face):
+    neighbors = Cube.cw_neighbor_edges(face)
+    return zip(neighbors, Cube.rotate_list(neighbors))
+
+  @staticmethod
+  def cw_neighbor_corners(corner):
+    face, edge, edge2 = corner
+    face_neighbors = Cube.cw_neighbor_edges(face)
+    index1 = face_neighbors.index(edge)
+    index2 = face_neighbors.index(edge2)
+    if (index1 + 1) % 4 == index2:
+      return [corner, (edge, face, edge2), (edge2, face, edge)] 
+    elif (index1 - 1) % 4 == index2:
+      return [corner, (edge2, face, edge), (edge, face, edge2)] 
+    else:
+      raise Exception("edges on corner must be adjacent neighbors of face")
+
+  @staticmethod
+  def corners_equal(cornerA, cornerB):
+    faceA, edgeA1, edgeA2 = cornerA
+    faceB, edgeB1, edgeB2 = cornerB
+    if faceA != faceB:
+      return False
+    else:
+      return tuple(sorted([edgeA1, edgeA2])) == tuple(sorted([edgeB1, edgeB2]))
+
+  @staticmethod 
+  def rotate_list(to_rotate):
     return [to_rotate[len(to_rotate)-1]] + to_rotate[:len(to_rotate)-1]
 
   def rotate(self, face, times=1):
@@ -136,17 +176,17 @@ class Cube:
       return
     
     # perform one clockwise rotation
-    neighbors = Cube.cw_neighbors[face]
+    neighbors = Cube.cw_neighbor_edges(face)
     num_neighbors = len(neighbors)
 
     # first, rotate the edges
     # on-face edges
     colors = [self.get_color(face, n) for n in neighbors]
-    for n, c in zip(neighbors, self.rotate_list(colors)):
+    for n, c in zip(neighbors, Cube.rotate_list(colors)):
       self.set_color(c, face, n)
     # off-face edges
     colors = [self.get_color(n, face) for n in neighbors]
-    for n, c in zip(neighbors, self.rotate_list(colors)):
+    for n, c in zip(neighbors, Cube.rotate_list(colors)):
       self.set_color(c, n, face)
   
     # next, rotate the corners
@@ -154,7 +194,7 @@ class Cube:
     colors = [
         self.get_color(face, neighbors[i], neighbors[(i+1) % num_neighbors]) \
         for i in range(num_neighbors)]
-    for i, c in zip(range(num_neighbors), self.rotate_list(colors)):
+    for i, c in zip(range(num_neighbors), Cube.rotate_list(colors)):
       self.set_color(c, face, neighbors[i], neighbors[(i+1) % num_neighbors])
     # two off-face corners (one corner closer to the CW direction, and the other
     # corner closer to the CCW direction)
@@ -163,12 +203,12 @@ class Cube:
     for offset in [cw_offset, ccw_offset]:
       colors = []
       for n in neighbors:
-        neighbors_of_neighbors = Cube.cw_neighbors[n]
+        neighbors_of_neighbors = Cube.cw_neighbor_edges(n)
         index = neighbors_of_neighbors.index(face)
         edge2 = neighbors_of_neighbors[(index+offset) % num_neighbors]
         colors += [self.get_color(n, face, edge2)]
-      for n, c in zip(neighbors, self.rotate_list(colors)):
-        neighbors_of_neighbors = Cube.cw_neighbors[n]
+      for n, c in zip(neighbors, Cube.rotate_list(colors)):
+        neighbors_of_neighbors = Cube.cw_neighbor_edges(n)
         index = neighbors_of_neighbors.index(face)
         edge2 = neighbors_of_neighbors[(index+offset) % num_neighbors]
         self.set_color(c, n, face, edge2)
