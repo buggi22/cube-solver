@@ -47,6 +47,7 @@ class CubeDisplay:
          int(2*self.outer_margin_width + self.total_cube_height))
       self.windowSurface = pygame.display.set_mode(window_dimensions)
       pygame.display.set_caption('Cubes!')
+      pygame.key.set_repeat(200, 50)
 
   def draw(self):
     self.windowSurface.fill(RGB.get('white'))
@@ -126,14 +127,33 @@ class CubeDisplay:
     pygame.draw.polygon(self.windowSurface, color_rgb, points)
     pygame.draw.polygon(self.windowSurface, RGB.BLACK, points, 2)
 
-  def wait_until_quit(self):
-    print "Entering pygame loop"
+  def quit(self):
+    pygame.quit()
+    sys.exit(0)
+    self.windowSurface = None
+
+  def wait_for_key(self):
     done = False
     while not done:
       pygame.time.wait(10)
       for event in pygame.event.get():
         if event.type == QUIT:
-          pygame.quit()
+          self.quit()
           done = True
-    self.windowSurface = None
-    print "End of pygame loop"
+        elif event.type == KEYDOWN:
+          if event.key == K_ESCAPE:
+            self.quit()
+          done = True
+
+  def wait_until_quit(self):
+    done = False
+    while not done:
+      pygame.time.wait(10)
+      for event in pygame.event.get():
+        if event.type == QUIT:
+          self.quit()
+          done = True
+        elif event.type == KEYDOWN:
+          if event.key == K_ESCAPE:
+            self.quit()
+            done = True

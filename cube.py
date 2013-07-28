@@ -134,6 +134,37 @@ class Cube:
     dest_index = corners.index(dest_corner)
     return (source_face, (dest_index - source_index) % 4)
 
+  def is_cubie_in_layer(self, cubie, layer):
+    return any([face == layer for face in cubie])
+
+  def get_move_cubie_into_layer(self, source_cubie, layer):
+    if self.is_cubie_in_layer(source_cubie, layer):
+      return []
+    opposite_layer = Cube.opposite_face(layer)
+    if len(source_cubie) == 2: # edge
+      source_face, source_edge = source_cubie
+      if source_face == opposite_layer:
+        return [(source_edge, 2)]
+      elif source_edge == opposite_layer:
+        return [(source_face, 2)]
+      else:
+        neighbors = Cube.cw_neighbor_edges(layer)
+        face_index = neighbors.index(source_face)
+        edge_index = neighbors.index(source_edge)
+        times = (edge_index - face_index) % 4
+        assert times == 1 or times == 3
+        return [(source_face, times)]
+    elif len(source_cubie) == 3: # corner
+      non_opposites = [f for f in source_cubie if f != opposite_layer]
+      print layer
+      print opposite_layer
+      print source_cubie
+      print non_opposites
+      assert len(non_opposites) == 2
+      return self.get_move_cubie_into_layer(non_opposites, layer)
+    else:
+      raise Exception("cubie must be specified with 2 or 3 coordinates")
+
   @staticmethod
   def cw_neighbor_edges(face):
     return Cube._cw_neighbors[face]
@@ -157,6 +188,13 @@ class Cube:
       raise Exception("edges on corner must be adjacent neighbors of face")
 
   @staticmethod
+  def opposite_face(face):
+    opposites = [f for f in Cube.faces if
+        (f != face and f not in Cube.cw_neighbor_edges(face))]
+    assert len(opposites) == 1
+    return opposites[0]
+
+  @staticmethod
   def corners_equal(cornerA, cornerB):
     faceA, edgeA1, edgeA2 = cornerA
     faceB, edgeB1, edgeB2 = cornerB
@@ -164,6 +202,10 @@ class Cube:
       return False
     else:
       return tuple(sorted([edgeA1, edgeA2])) == tuple(sorted([edgeB1, edgeB2]))
+
+  @staticmethod
+  def same_cubie(c1, c2):
+    return sorted(c1) == sorted(c2)
 
   @staticmethod 
   def rotate_list(to_rotate):
