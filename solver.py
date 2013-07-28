@@ -160,8 +160,7 @@ class LowerCorners(PhaseSolver):
           ", steps = " + str(steps)
       return steps
     else:
-      setup_sequence = cube.get_move_cubie_into_layer(
-          (case.source_face, case.source_edge, case.source_edge2), 'up')
+      setup_sequence = cube.get_move_cubie_into_layer(source_cubie, 'up')
       print "DEBUG: setup_sequence = " + str(setup_sequence)
       steps = setup_sequence + [('up', 1)] + \
           Solver.reverse_sequence(setup_sequence)
@@ -170,10 +169,74 @@ class LowerCorners(PhaseSolver):
 
 class MiddleEdges(PhaseSolver):
   def find_unsolved(self, cube):
-    return []
+    edges = []
+    edges.extend([('up', f) for f in Cube.cw_neighbor_edges('up')])
+    edges.extend([c for c in Cube.cw_corners_on_face('up')])
+    edges.extend([('down', f) for f in Cube.cw_neighbor_edges('down')])
+
+    unsolved = []
+    for f1, f2 in edges:
+      color1 = cube.get_color(f1, f2)
+      color2 = cube.get_color(f2, f1)
+      dest_f1 = cube.get_dest_face(color1)
+      dest_f2 = cube.get_dest_face(color2)
+      already_solved = (f1 == dest_f1 and f2 == dest_f2)
+      if not already_solved:
+        assert f1 != 'down' and f2 != 'down'
+        assert dest_f1 != 'down' and dest_f2 != 'down'
+        if dest_f1 != 'up' and dest_f2 != 'up':
+          unsolved.append(Unsolved(f1, f2, None, dest_f1, dest_f2, None))
+
+    def sorter(u):
+      if cube.is_cubie_in_layer((u.source_face, u.source_edge), 'up'):
+        if u.source_face == 'up':
+          non_up = u.source_edge
+          non_up_dest = u.dest_edge
+        else:
+          non_up = u.source_face
+          non_up_dest = u.dest_face
+        if non_up == non_up_dest:
+          return 0  # in top layer and aligned
+        else:
+          return 1  # in top layer but not aligned
+      else:
+        return 2  # not in top layer
+
+    # NOTE: Sorting by the worst-case number of times "solve_case" must be
+    # invoked to solve each cubie.
+    unsolved.sort(key=sorter)
+
+    return unsolved
 
   def solve_case(self, cube, unsolved):
-    return []
+    case = unsolved[0]
+    source_cubie = (case.source_face, case.source_edge)
+    source_face, source_edge = source_cubie
+    dest_cubie = (case.dest_face, case.dest_edge)
+    dest_face, dest_edge = dest_cubie
+
+    if cube.is_cubie_in_layer(source_cubie, 'up'):
+      up_index = source_cubie.index('up')
+      assert up_index == 0 or up_index == 1
+      non_up_index = (up_index + 1) % 2
+      non_up = source_cubie[non_up_index]
+      non_up_dest = dest_cubie[non_up_index]
+      if non_up == non_up_dest:  # in top layer and aligned
+        up_dest = dest_cubie[up_index]
+        seq1 = [cube.get_simple_move('up', non_up, up_dest)]
+        seq2 = cube.get_move_cubie_into_layer((up_dest, non_up_dest), 'up')
+        seq3 = cube.get_move_cubie_into_layer((non_up_dest, up_dest), 'up')
+        return Solver.reverse_sequence(seq1) + seq2 + seq1 + Solver.reverse_sequence(seq2) + Solver.reverse_sequence(seq3) + Solver.reverse_sequence(seq2) + seq3 + seq2
+      else:  # in top layer but not aligned
+        return [cube.get_simple_move('up', non_up, non_up_dest)]
+
+    else:
+      setup_sequence = cube.get_move_cubie_into_layer(source_cubie, 'up')
+      print "DEBUG: setup_sequence = " + str(setup_sequence)
+      steps = setup_sequence + [('up', 1)] + \
+          Solver.reverse_sequence(setup_sequence)
+      print "DEBUG: returning steps = " + str(steps)
+      return steps
 
 class UpperEdgesOrientation(PhaseSolver):
   def find_unsolved(self, cube):
