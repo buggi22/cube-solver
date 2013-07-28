@@ -226,7 +226,9 @@ class MiddleEdges(PhaseSolver):
         seq1 = [cube.get_simple_move('up', non_up, up_dest)]
         seq2 = cube.get_move_cubie_into_layer((up_dest, non_up_dest), 'up')
         seq3 = cube.get_move_cubie_into_layer((non_up_dest, up_dest), 'up')
-        return Solver.reverse_sequence(seq1) + seq2 + seq1 + Solver.reverse_sequence(seq2) + Solver.reverse_sequence(seq3) + Solver.reverse_sequence(seq2) + seq3 + seq2
+        return Solver.reverse_sequence(seq1) + seq2 + seq1 + \
+            Solver.reverse_sequence(seq2) + Solver.reverse_sequence(seq3) + \
+            Solver.reverse_sequence(seq2) + seq3 + seq2
       else:  # in top layer but not aligned
         return [cube.get_simple_move('up', non_up, non_up_dest)]
 
@@ -240,17 +242,97 @@ class MiddleEdges(PhaseSolver):
 
 class UpperEdgesOrientation(PhaseSolver):
   def find_unsolved(self, cube):
-    return []
+    unsolved = []
+    for n in Cube.cw_neighbor_edges('up'):
+      up_color = cube.get_color('up', n)
+      if up_color != 'yellow':
+        unsolved.append(Unsolved(n, 'up', None, 'up', n, None))
+    return unsolved
 
   def solve_case(self, cube, unsolved):
-    return []
+    print "DEBUG: unsolved = " + str([str(u) for u in unsolved])
+    if len(unsolved) == 4:
+      print "DEBUG: len(unsolved) == 4"
+      return [('front', 1), ('right', 1), ('up', 1),
+          ('right', 3), ('up', 3), ('front', 3)]
+    elif len(unsolved) == 2:
+      f0 = unsolved[0].source_face
+      f1 = unsolved[1].source_face
+      _, times = cube.get_simple_move('up', f0, f1)
+      print "DEBUG: f0 = {0}, f1 = {1}, times = {2}".format(f0, f1, times)
+      if times == 1 or times == 3:
+        if times == 3:
+          f0, f1 = f1, f0  # we want f1 to be immediate CW neighbor of f0
+
+        if f0 == 'right':
+          return [('front', 1), ('up', 1), ('right', 1),
+              ('up', 3), ('right', 3), ('front', 3)]
+        else:
+          return [cube.get_simple_move('up', f0, 'right')]
+      else:
+        assert times == 2
+        if f0 == 'front' or f1 == 'front':
+          return [('front', 1), ('right', 1), ('up', 1),
+              ('right', 3), ('up', 3), ('front', 3)]
+        else:
+          return [('up', 1)]
+    raise Exception("num unsolved should be 2 or 4, was " + str(len(unsolved)))
 
 class UpperEdgesPermutation(PhaseSolver):
+  def __init__(self, allow_complex_permutations=True):
+    self.allow_complex_permutations = allow_complex_permutations
+
   def find_unsolved(self, cube):
-    return []
+    unsolved = []
+    num_unsolved = 0
+    for n in Cube.cw_neighbor_edges('up'):
+      non_up_color = cube.get_color(n, 'up')
+      dest_face = cube.get_dest_face(non_up_color)
+      if dest_face != n:
+        num_unsolved += 1
+      unsolved.append(Unsolved(n, 'up', None, dest_face, 'up', None))
+    # either return all edges, or none of them
+    if num_unsolved > 0:
+      return unsolved
+    else:
+      return []
 
   def solve_case(self, cube, unsolved):
-    return []
+    assert len(unsolved) == 4
+    turns = []
+    for u in unsolved:
+      _, num_turns = cube.get_simple_move('up', u.source_face, u.dest_face)
+      turns.append(num_turns)
+
+    # Simplest case: all edges need to be turned by the same amount
+    if len(set(turns)) == 1:
+      return [('up', turns[0])]
+
+    if not self.allow_complex_permutations:
+      raise Exception("trying to solve disallowed complex permutation")
+
+    print "DEBUG: before normalizing, turns = {0}".format(turns)
+    min_turns = min(turns)
+    min_index = turns.index(min_turns)
+    if min_index == 0 and turns[3] == min_turns:
+      # special case when two adjacent min_turns wrap around
+      min_index = 3
+    turns = [turns[(i + min_index) % 4] - min_turns for i in range(len(turns))]
+    print "DEBUG: after normalizing, turns = {0}".format(turns)
+
+    if turns == [0, 0, 1, 3] or turns == [0, 1, 3, 0]:
+      return [('up', 1)]
+    if turns == [0, 2, 3, 3]:
+      # counter-clockwise
+      other_face = unsolved[(min_index + 3) % 4].source_face
+      return [(other_face, 1), ('up', 1), (other_face, 3),
+          ('up', 1), (other_face, 1), ('up', 2), (other_face, 3)]
+    elif turns == [0, 1, 1, 2] or turns == [0, 2, 0, 2]:
+      # clockwise or swap edges
+      return [(other_face, 1), ('up', 2), (other_face, 3),
+          ('up', 3), (other_face, 1), ('up', 3), (other_face, 3)]
+    else:
+      raise Exception("unrecognized turns pattern: " + str(turns))
 
 class UpperCornersOrientation(PhaseSolver):
   def find_unsolved(self, cube):
@@ -274,6 +356,7 @@ class Solver:
     UpperEdgesOrientation(),
     UpperEdgesPermutation(),
     UpperCornersOrientation(),
+    # TODO: consider adding: UpperEdgesPermutation(allow_complex_permutations=False),
     UpperCornersPermutation(),
   ]
 
