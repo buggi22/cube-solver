@@ -13,11 +13,11 @@ def run_sequence(sequence, cube, display):
 cube = Cube()
 display = graphics.CubeDisplay(cube)
 
-sequence = cube.generate_scramble_sequence(moves=10)
+sequence = cube.generate_scramble_sequence(moves=10, seed=710)
 print 'Scrambling sequence: ' + str(sequence)
 run_sequence(sequence, cube, display)
 
-solution = Solver(debug_display=display).find_solution(cube)
+solution = Solver(debug_display=display, print_debug=True).find_solution(cube)
 print 'Solution sequence: ' + str(solution)
 run_sequence(solution, cube, display)
 

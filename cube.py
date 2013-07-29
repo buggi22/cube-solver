@@ -156,10 +156,6 @@ class Cube:
         return [(source_face, times)]
     elif len(source_cubie) == 3: # corner
       non_opposites = [f for f in source_cubie if f != opposite_layer]
-      print layer
-      print opposite_layer
-      print source_cubie
-      print non_opposites
       assert len(non_opposites) == 2
       return self.get_move_cubie_into_layer(non_opposites, layer)
     else:
